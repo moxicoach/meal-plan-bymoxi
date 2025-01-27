@@ -101,3 +101,129 @@ if st.button("Generate Meal Plan"):
     for meal, details in meal_plan.items():
         st.write(f"{meal.capitalize()}: {', '.join(details['foods'])}")
         st.write(f"  Protein: {details['protein']}g, Carbs: {details['carbs']}g, Fats: {details['fats']}g")
+import streamlit as st
+import time
+from streamlit_lottie import st_lottie
+import requests
+
+# Load Lottie animation
+def load_lottie_url(url):
+    response = requests.get(url)
+    if response.status_code != 200:
+        return None
+    return response.json()
+
+# Sample Recipe Database
+recipes = [
+    {
+        "name": "Greek Yogurt with Honey and Nuts",
+        "calories": 300,
+        "diet": ["vegetarian", "gluten-free"],
+        "allergies": ["nuts"],
+        "cuisine": "Mediterranean",
+        "cooking_time": 5,
+        "image_url": "https://example.com/greek-yogurt.jpg"
+    },
+    {
+        "name": "Quinoa Salad with Chickpeas and Veggies",
+        "calories": 400,
+        "diet": ["vegetarian", "vegan", "gluten-free"],
+        "allergies": [],
+        "cuisine": "Mediterranean",
+        "cooking_time": 20,
+        "image_url": "https://example.com/quinoa-salad.jpg"
+    }
+]
+
+# Function to filter recipes
+def filter_recipes(recipes, diet_preference, allergies, max_cooking_time, cuisine_preference):
+    filtered_recipes = []
+    for recipe in recipes:
+        if diet_preference.lower() not in [d.lower() for d in recipe["diet"]]:
+            continue
+        if any(allergy.lower() in [a.lower() for a in recipe["allergies"]] for allergy in allergies):
+            continue
+        if recipe["cooking_time"] > max_cooking_time:
+            continue
+        if cuisine_preference.lower() != recipe["cuisine"].lower():
+            continue
+        filtered_recipes.append(recipe)
+    return filtered_recipes
+
+# Function to generate a meal plan
+def generate_meal_plan(filtered_recipes, calorie_goal):
+    meal_plan = []
+    total_calories = 0
+    for recipe in filtered_recipes:
+        if total_calories + recipe["calories"] <= calorie_goal:
+            meal_plan.append(recipe)
+            total_calories += recipe["calories"]
+        if total_calories >= calorie_goal:
+            break
+    return meal_plan, total_calories
+
+# Streamlit app
+def main():
+    st.title("🍽️ Personalized Meal Generator")
+    st.write("Welcome to your personalized meal planner! 🎉 Answer a few questions below, and we'll create a delicious meal plan just for you. 😋")
+
+    # Lottie animation
+    lottie_animation = load_lottie_url("https://assets10.lottiefiles.com/packages/lf20_ktwnwv5m.json")
+    st_lottie(lottie_animation, height=300, key="meal_animation")
+
+    # User inputs in sidebar
+    with st.sidebar:
+        st.header("Your Preferences")
+        diet_preference = st.selectbox("Dietary Preference", ["vegetarian", "vegan", "non-vegetarian"])
+        allergies = st.text_input("Allergies (comma-separated, e.g., nuts, gluten)").split(",")
+        max_cooking_time = st.slider("Maximum Cooking Time (minutes)", 5, 60, 30)
+        cuisine_preference = st.selectbox("Preferred Cuisine", ["Mediterranean", "Asian", "American"])
+        calorie_goal = st.number_input("Daily Calorie Goal", min_value=500, max_value=3000, value=1500)
+
+    # Filter recipes
+    filtered_recipes = filter_recipes(recipes, diet_preference, allergies, max_cooking_time, cuisine_preference)
+
+    # Generate meal plan
+    with st.spinner("Generating your meal plan... 🍳"):
+        time.sleep(2)  # Simulate a delay
+        meal_plan, total_calories = generate_meal_plan(filtered_recipes, calorie_goal)
+
+    # Display meal plan
+    if meal_plan:
+        st.subheader("Your Personalized Meal Plan 🥗")
+        for meal in meal_plan:
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                if meal.get("image_url"):
+                    st.image(meal["image_url"], caption=meal['name'], width=150)
+            with col2:
+                st.write(f"**{meal['name']}**")
+                st.write(f"🍴 **Calories:** {meal['calories']}")
+                st.write(f"⏱️ **Cooking Time:** {meal['cooking_time']} minutes")
+                st.write(f"🌍 **Cuisine:** {meal['cuisine']}")
+            st.write("---")  # Add a separator
+        st.write(f"**Total Calories: {total_calories}**")
+
+        # Grocery list
+        st.subheader("🛒 Grocery List")
+        ingredients = set(["Quinoa", "Chickpeas", "Veggies", "Hummus"])  # Replace with actual logic
+        for ingredient in ingredients:
+            st.write(f"- {ingredient}")
+    else:
+        st.write("No meals found matching your criteria. Please adjust your inputs.")
+
+    # Feedback form
+    with st.expander("💬 Give Feedback"):
+        feedback = st.text_area("How can we improve?")
+        if st.button("Submit Feedback"):
+            st.success("Thank you for your feedback! 🙏")
+
+    # Generate again button
+    if st.button("🔄 Generate New Meal Plan"):
+        st.experimental_rerun()
+
+# Run the app
+if __name__ == "__main__":
+    main()
+    st.title("🍽️ Personalized Meal Generator")
+st.write("Welcome to your personalized meal planner! Answer a few questions below, and we'll create a delicious meal plan just for you.")
